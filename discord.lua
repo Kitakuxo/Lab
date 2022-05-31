@@ -1,4 +1,4 @@
-local Code = "25qTNUuXF8"
+local Code = "Z2SfKjgs4z"
 local function Invite()
     if not pcall(syn.request, {
         ["Url"] = "http://127.0.0.1:6463/rpc?v=1",
