@@ -1,37 +1,4 @@
-Skip to content
-Search or jump to…
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@Kitakuxo 
- The password you provided is in a list of passwords commonly used on other websites. To increase your security, you must update your password. After June 10, 2022 we will automatically reset your password. Change your password on the settings page.
-
-Read our documentation on safer password practices.
-
-Kitakuxo
-/
-Lab
-Public
-Code
-Issues
-Pull requests
-Actions
-Projects
-Wiki
-Security
-Insights
-Settings
-Lab/Rush_point
-@Kitakuxo
-Kitakuxo Update Rush_point
-Latest commit 345a906 3 minutes ago
- History
- 1 contributor
-1932 lines (1862 sloc)  78 KB
-   
-while game.GameId == 0 do task.wait() end
+ while game.GameId == 0 do task.wait() end
 if game.GameId ~= 2162282815 then return end
 local MAX_FOV = 200
 local function RejoinSameInstance()
