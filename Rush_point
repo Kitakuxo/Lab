@@ -115,11 +115,13 @@ acbp()
     if not syn then (messagebox or print)("Your exploit is not supported", "Exploit not supported", 0) end
 
     local o = {} -- options
-    loadstring(game:HttpGet("https://hub.afo.xyz/include/logging.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/sarapakjaivip/main/logging.lua"))()
     clear()
-    title("AfoHub - Loading")
+    title("Ui Loading")
     printwelcome()
-    info("Loading AfoHub...")
+    info("Welecome to Barboss steak ...")
+    info("Script - Loading ...")
+    info ("Have Fun to Cheat in RushPoint")
 
     local function WaitForService(serv)
         repeat task.wait() until game:GetService(serv)
@@ -131,7 +133,7 @@ acbp()
     end
 
     info("Getting ui library")
-    local library = loadstring(game:HttpGet("https://hub.afo.xyz/include/ui.lua", true))()
+    local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/sarapakjaivip/main/Ui.lua", true))()
     repeat task.wait() until WaitForProp(WaitForService("Players"), "LocalPlayer")
     info("Getting replicatedstorage")
     local replicatedstorage = WaitForService("ReplicatedStorage")
@@ -149,8 +151,8 @@ acbp()
     repeat task.wait() until WaitForProp(players, "MaxPlayers") ~= 0
     local isInLobby = WaitForProp(players, "MaxPlayers") == 1 or game.PlaceId == 5993942214
     if isInLobby then
-        title("AfoHub - In the lobby")
-        info("You are in the lobby :D")
+        title("Script Loading . . . - In the lobby")
+        info("This is Lobby i know :>")
         --// lobby script
         warn("TODO: menu support")
         coroutine.wrap(function()
@@ -189,8 +191,8 @@ acbp()
     --local camera = WaitForProp(workspace, "CurrentCamera")
     --info("Getting player mouse")
     --local mouse = WaitForProp(localplayer, "GetMouse")(localplayer)
-    title("AfoHub - In a game")
-    info("You are in a game :3")
+    title("Script Rush Point . . . - In a game")
+    info("u r in game >:")
     
 
     local function WaitForModule(name)
@@ -573,7 +575,7 @@ acbp()
     o.do_soundspam = false
     o.do_commspam = false
     o.do_chatspam = false
-    o.chatspam_msg = "AfoHub winning!"
+    o.chatspam_msg = "Kitaku is Suck but smart :> "
     o.speed_modifier = 1 -- max = 6x / set MovementSpeedMultiplier of currentWeapon
     --o.jumppower = 30
     o.do_lagserver = false
@@ -612,7 +614,7 @@ acbp()
 
     info("Getting config")
 
-    local fn = "afohub_settings.rpoint.json"
+    local fn = "settings.rpoint.json"
     function saveOptions()
         local str = httpservice:JSONEncode(o)
         local suc, err = pcall(writefile, fn, str)
@@ -1107,7 +1109,7 @@ acbp()
 
     info("Initializing ui")
     do --// ui
-        local ui = library:CreateWindow("AfoHub")
+        local ui = library:CreateWindow("Rush Point")
 
         local skin_changer = ui:AddFolder("Skin Changer")
         local aim = ui:AddFolder("Aim")
@@ -1593,7 +1595,7 @@ acbp()
         })
         ui:AddButton({
             text = "Join Discord",
-            callback = loadstring(game:HttpGet("https://hub.afo.xyz/include/discord.lua"))()
+            callback = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/Lab/main/discord.lua"))()
         })
         --ui:AddButton({
         --    text = "Rejoin",
@@ -1901,8 +1903,8 @@ acbp()
 
     library:Init()
     getgenv(0).__AHLOADED = true
-    ok("AfoHub ready :D")
-    WaitForService("StarterGui"):SetCore("SendNotification", { Title = "Welcome to AfoHub", Text = "Made by Afoxie on V3rm", Image = "rbxassetid://7091101767" })
+    ok("Script ready :D")
+    WaitForService("StarterGui"):SetCore("SendNotification", { Title = "Welcome to BarBoss Steak . . .", Text = "Made by Kitaku#3980", Image = "rbxassetid://7091101767" })
     --
 --[[end, debug.traceback)
 if not success then
@@ -1912,7 +1914,7 @@ if not success then
     tb = select(2, tb)
     --genv.rconsoleclear()
     genv.rconsoleprint("@@YELLOW@@")
-    genv.rconsoleprint("AfoHub did not initialize properly\n")
+    genv.rconsoleprint("Suck!\n")
     genv.rconsoleprint("@@LIGHT_RED@@")
     genv.rconsoleprint(tostring(msg) .. "\n")
     genv.rconsoleprint("@@LIGHT_BLUE@@")
