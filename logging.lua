@@ -7,12 +7,12 @@ getgenv(0).clear = rconsoleclear or function() end
 
 getgenv(0).printwelcome = function()
     rconsoleprint("@@LIGHT_RED@@")
-    rconsoleprint(" _    _ _           _            \n")
-    rconsoleprint("| |  / |_)_        | |           \n")
-    rconsoleprint("| | / / _| |_  ____| |  _ _   _  \n")
-    rconsoleprint("| |< < | |  _)/ _  | | / ) | | | \n")
-    rconsoleprint("| | \ \| | |_( ( | | |< (| |_| | \n")
-    rconsoleprint("|_|  \_)_|\___)_||_|_| \_)\____| \n")
+    rconsoleprint("R.i.p Rush Point \n")
+    rconsoleprint("Suck Game \n")
+    rconsoleprint("Fuck Rush Point \n")
+    rconsoleprint("Easy to Hack \n")
+    rconsoleprint("Have Fun \n")
+    rconsoleprint("Script Made By Kitaku#3980 \n")
     rconsoleprint("@@WHITE@@")
     rconsoleprint("\n")
 end
