@@ -154,7 +154,7 @@ acbp()
         title("Script Loading . . . - In the lobby")
         info("This is Lobby i know :>")
         --// lobby script
-        warn("TODO: menu support")
+        warn("Ready !")
         coroutine.wrap(function()
             local menu = localplayer:WaitForChild("PlayerGui"):WaitForChild("Menu")
             while task.wait(.5) do
