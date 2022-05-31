@@ -6,11 +6,13 @@ getgenv(0).title = rconsolename or function() end
 getgenv(0).clear = rconsoleclear or function() end
 
 getgenv(0).printwelcome = function()
-    rconsoleprint("@@LIGHT_RED@@")
+    rconsoleprint("@@GREEN@@")
     rconsoleprint("                     Welcome !                     \n")
     rconsoleprint("                                                \n")
+    rconsoleprint("@@LIGHT_RED@@")
     rconsoleprint("     Bitch , Nigga. this is my First Project  \n")
     rconsoleprint("                                                \n")
+    rconsoleprint("@@BLUE@@")
     rconsoleprint("               Cheat Made By Kitaku    \n")
     rconsoleprint("@@WHITE@@")
     rconsoleprint("\n")
