@@ -7,12 +7,12 @@ getgenv(0).clear = rconsoleclear or function() end
 
 getgenv(0).printwelcome = function()
     rconsoleprint("@@LIGHT_RED@@")
-    rconsoleprint("  _  ___ _        _           \n")
-    rconsoleprint(" | |/ (_) |      | |          \n")
-    rconsoleprint(" | ' / _| |_ __ _| | ___   _  \n")
-    rconsoleprint(" |  < | | __/ _` | |/ / | | | \n")
-    rconsoleprint(" | . \| | || (_| |   <| |_| | \n")
-    rconsoleprint(" |_|\_\_|\__\__,_|_|\_\\__,_| \n")
+    rconsoleprint(" _  ___ _        _           \n")
+    rconsoleprint("| |/ (_) |      | |          \n")
+    rconsoleprint("| ' / _| |_ __ _| | ___   _  \n")
+    rconsoleprint("|  < | | __/ _` | |/ / | | | \n")
+    rconsoleprint("| . \| | || (_| |   <| |_| | \n")
+    rconsoleprint("|_|\_\_|\__\__,_|_|\_\\__,_| \n")
     rconsoleprint("@@WHITE@@")
     rconsoleprint("\n")
 end
