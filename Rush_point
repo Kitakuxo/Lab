@@ -1,3 +1,36 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@Kitakuxo 
+ The password you provided is in a list of passwords commonly used on other websites. To increase your security, you must update your password. After June 10, 2022 we will automatically reset your password. Change your password on the settings page.
+
+Read our documentation on safer password practices.
+
+Kitakuxo
+/
+Lab
+Public
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+Settings
+Lab/Rush_point
+@Kitakuxo
+Kitakuxo Update Rush_point
+Latest commit 345a906 3 minutes ago
+ History
+ 1 contributor
+1932 lines (1862 sloc)  78 KB
+   
 while game.GameId == 0 do task.wait() end
 if game.GameId ~= 2162282815 then return end
 local MAX_FOV = 200
@@ -66,6 +99,7 @@ local acbp do
         already_scraped[func] = true
     end
     function acbp()
+        local did_a_success = false
         for _, fuck_bye in pairs(scrape_gc_for_blacklist({ "Funny little blue man :zzz:",
             "Bye...#0001 was here", "rconsoleprint", "rconsoleclear", "rconsolename", "loadstring" }))
         do
@@ -76,6 +110,7 @@ local acbp do
                 then
                     -- goodBYE anticheat :3
                     realTable = up
+                    did_a_success = true
                     break
                 end
             end
@@ -103,6 +138,7 @@ local acbp do
                 end
             end
         end
+        return did_a_success
     end
 end
 acbp()
@@ -1125,11 +1161,11 @@ acbp()
             state = o.do_silentaim,
             callback = function(v) o.do_silentaim = v end
         })
-       -- aim:AddToggle({
-       --     text = "Prefer Body",
-      --      state = o.prefer_body,
-       --     callback = function(v) o.prefer_body = v end
-      --  })
+       --[[ aim:AddToggle({
+            text = "Prefer Body",
+            state = o.prefer_body,
+            callback = function(v) o.prefer_body = v end
+        }) ]]--
         aim:AddToggle({
             text = "Use FOV",
             state = o.usefov,
@@ -1147,91 +1183,61 @@ acbp()
             state = o.visibleonly,
             callback = function(v) o.visibleonly = v end
         })
-      --  aim:AddToggle({
-      --      text = "Shoot \"Around Corners\"",
-      --      state = o.do_cornershoot,
-      --      callback = function(v) o.do_cornershoot = v end
-      --  })
-    --    aim:AddToggle({
-     --       text = "Infinite Wallbang",
-     --       state = o.do_infwallbang,
-     --       callback = function(v) o.do_infwallbang = v end
-    --    })
-    --    aim:AddToggle({
-     --       text = "Always Backstab",
-      --      state = o.do_alwaysbackstab,
-      --      callback = function(v) o.do_alwaysbackstab = v end
-     --   })
-   ----     aim:AddToggle({
-     --       text = "Auto Knife",
-   --         state = o.do_autoknife,
-   --         callback = function(v) o.do_autoknife = v end
-   --     })
-   --     aim:AddToggle({
-    --        text = "Auto Shoot",
-     --       state = o.do_autoshoot,
-      --      callback = function(v) o.do_autoshoot = v end
-      --  })
-      --  aim:AddToggle({
-       --     text = "Auto Wallbang",
-       --     state = o.do_autowall,
-       --     callback = function(v) o.do_autowall = v end
-      --  })
-      --  aim:AddToggle({
-       --     text = "Auto Reload",
-        --    state = o.do_autoreload,
-      --     callback = function(v) o.do_autoreload = v end
-      --  })
-        aim:AddSlider({
-      --      text = "Auto Shoot Delay",
-      --      value = o.autoshoot_delay,
-      --      min = 0,
-      --      max = 1000,
-      --      callback = function(v) o.autoshoot_delay = v end
-     --   })
-     --   aim:AddBind({
-      --      text = "Force Shoot",
-       --     key = "Z",
-      --      hold = true,
-      --      callback = force_shoot
-    --    })
-     --   aim:AddList({
-     --       text = "Auto Shoot Mode",
-      --      value = o.autoshoot_mode,
-      --      values = { "Forced", "Regular" },
-      --      callback = function(v) o.autoshoot_mode = v end
+    --[[    aim:AddToggle({
+            text = "Shoot \"Around Corners\"",
+            state = o.do_cornershoot,
+            callback = function(v) o.do_cornershoot = v end
         })
+        aim:AddToggle({
+            text = "Infinite Wallbang",
+            state = o.do_infwallbang,
+            callback = function(v) o.do_infwallbang = v end
+        })
+        aim:AddToggle({
+            text = "Always Backstab",
+            state = o.do_alwaysbackstab,
+            callback = function(v) o.do_alwaysbackstab = v end
+        })
+        aim:AddToggle({
+            text = "Auto Knife",
+            state = o.do_autoknife,
+            callback = function(v) o.do_autoknife = v end
+        })
+        aim:AddToggle({
+            text = "Auto Shoot",
+            state = o.do_autoshoot,
+            callback = function(v) o.do_autoshoot = v end
+        })
+        aim:AddToggle({
+            text = "Auto Wallbang",
+            state = o.do_autowall,
+            callback = function(v) o.do_autowall = v end
+        })
+        aim:AddToggle({
+            text = "Auto Reload",
+            state = o.do_autoreload,
+            callback = function(v) o.do_autoreload = v end
+        })
+        aim:AddSlider({
+            text = "Auto Shoot Delay",
+            value = o.autoshoot_delay,
+            min = 0,
+            max = 1000,
+            callback = function(v) o.autoshoot_delay = v end
+        })
+        aim:AddBind({
+            text = "Force Shoot",
+            key = "Z",
+            hold = true,
+            callback = force_shoot
+        })
+        aim:AddList({
+            text = "Auto Shoot Mode",
+            value = o.autoshoot_mode,
+            values = { "Forced", "Regular" },
+            callback = function(v) o.autoshoot_mode = v end
+        }) ]]--
 
-        --anti_aim:AddToggle({
-         --   text = "Enable",
-            --state = o.do_antiaim,
-            --callback = function(v) o.do_antiaim = v end
-        --})
-        --anti_aim:AddList({
-            --text = "Pitch",
-            --value = o.antiaim_pitch,
-            --values = { "Default", "Up", "Down", "Random" },
-            --callback = function(v) o.antiaim_pitch = v end
-        --})
-        --anti_aim:AddList({
-            --text = "Yaw",
-            --value = o.antiaim_yaw,
-            --values = { "Default", "Spin", "Backwards", "Backwards Jitter" },
-            --callback = function(v) o.antiaim_yaw = v end
-        --})
-        --anti_aim:AddList({
-            --text = "Face Towards",
-            --value = o.antiaim_target,
-            --values = { "View Angle", "Target" },
-            --callback = function(v) o.antiaim_target = v end
-        --})
-        --anti_aim:AddToggle({
-            --text = "No Leg Movement",
-          --  state = o.antiaim_noleg,
-          --  callback = function(v) o.antiaim_noleg = v end
-       -- })
-
-        gun:AddLabel({ text = "Gun mods are not reversible" })
         gun:AddList({
             text = "Bullet Caliber",
             values = { "Default", "Pistol", "Shotgun", "Sniper", "Rifle" },
@@ -1369,7 +1375,7 @@ acbp()
             callback = function(v) o.esp_bombcolor = v end
         })
 
-        visuals:AddToggle({
+        --[[visuals:AddToggle({
             text = "Player Glow",
             state = o.do_glow,
             callback = function(v) o.do_glow = v end
@@ -1460,7 +1466,7 @@ acbp()
             for weapon, _ in pairs(weaponInfo) do
                 table.insert(weapons, weapon)
             end
-            misc:AddList({
+          --[[  misc:AddList({
                 text = "Spam Buy Weapon",
                 value = o.spambuy_weapon,
                 values = weapons,
@@ -1556,7 +1562,7 @@ acbp()
             text = "Name Spoofer (local)",
             value = o.spoofed_name,
             callback = function(v) o.spoofed_name = v end
-        })
+        })]]--
         --#region skin changer
         do
             local weapons = replicatedstorage:WaitForChild("Assets"):WaitForChild("Weapons")
