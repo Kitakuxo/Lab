@@ -193,6 +193,7 @@ acbp()
     info("Done !")
     info("--New Update Release Now--")
     info("-Team Check Outline-")
+    info("+ add No Recoil")
 
     local function WaitForService(serv)
         repeat task.wait() until game:GetService(serv)
