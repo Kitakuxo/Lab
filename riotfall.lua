@@ -1096,21 +1096,6 @@ end
             state = o.do_infiniteammo,
             callback = function(v) o.do_infiniteammo = v end
         })
-        gun:AddToggle({
-            text = "No Spread",
-            state = o.do_nospread,
-            callback = function(v) o.do_nospread = v end
-        })
-        gun:AddToggle({
-            text = "No Recoil",
-            state = o.do_norecoil,
-            callback = function(v) o.do_norecoil = v end
-        })
-        gun:AddToggle({
-            text = "No Pullout Delay",
-            state = o.do_zeropullout,
-            callback = function(v) o.do_zeropullout = v end
-        })
 
         esp:AddToggle({
             text = "Outlines",
