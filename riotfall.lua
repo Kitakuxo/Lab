@@ -24,6 +24,8 @@ end
     clear()
     title("Cheat - Loading")
     printwelcome()
+    info("Update Undetected")
+    ok("+Add More Gun Function")
     info("Loading Cheat...")
 
     local function WaitForService(serv)
