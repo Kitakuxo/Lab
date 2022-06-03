@@ -35,6 +35,7 @@ end
         return self[prop]
     end
 
+
     info("Getting ui library")
     local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/Lab/main/ui.lua", true))()
     repeat task.wait() until WaitForProp(WaitForService("Players"), "LocalPlayer")
@@ -403,7 +404,7 @@ end
                 if not msg.internal then
                     local msg_txt = o.do_rainbowchat and getRainbowText(msg.text) or msg.text
                     msg.prefix = "<font color=\"" .. default_colors[tostring(localplayer.TeamColor or "White")] .. "\"><b>"
-                                .. (o.spoofed_name ~= "" and o.spoofed_name or localplayer.Name)
+                                .. (o.spoofed_name ~= "" and tostring(o.spoofed_name) or localplayer.Name)
                                 .. "</b></font>: " .. msg_txt .. "\0"
                     msg.rawPrefix = ""
                     msg.text = ""
@@ -494,6 +495,7 @@ end
     o.do_norecoil = false -- set RecoilResetTime to 0 / set Kickback = {} / set Recoil - {}
     o.do_rainbowsky = false
     o.do_zeropullout = false
+    o.spoofed_name = ""
 
     o.skin_overrides = {}
 
@@ -560,15 +562,17 @@ end
             if not bone then
                 return
             end
-            pcall(shared_modules.Damage.ThrowableHit, {
-                playerName = plr.Name,
-                limbName = bone.Name,
-                weaponName = weapon.weaponID,
-                multiplier = 1,
-                crouch = false,
-                prone = false,
-                slide = false
-            })
+            for _ = 1, o.bullet_multiplier do
+                pcall(shared_modules.Damage.ThrowableHit, {
+                    playerName = plr.Name,
+                    limbName = bone.Name,
+                    weaponName = weapon.weaponID,
+                    multiplier = 1,
+                    crouch = false,
+                    prone = false,
+                    slide = false
+                })
+            end
         end
     end
 
@@ -942,7 +946,6 @@ end
             local Args = { ... }
             local EventName = Args[1]
             local Method = getnamecallmethod()
-            --info(tostring(self) .. ":" .. Method .. "(" .. string.sub(table.concat(Args, ", "), 1, -1) .. ")")
             if IsA(self, "RemoteEvent") and Method == "FireServer" then
                 local Handler = RemoteEventOverrides[EventName]
                 if type(Handler) == "function" then
@@ -950,7 +953,10 @@ end
                 end
             elseif self == localplayer and string.lower(Method) == "kick" then
                 return nil
+            elseif string.match(debug.getinfo(3).short_src, "AntiCheat$") then
+                return task.wait(10e5)
             end
+            --task.spawn(info, "{FROM", tostring(debug.getinfo(3).short_src) .. "} " .. tostring(self) .. ":" .. Method .. "(" .. string.sub(table.concat(Args, ", "), 1, -1) .. ")")
         end
         return OldNameCall(self, ...)
     end))
@@ -962,10 +968,8 @@ end
 
         local aim = ui:AddFolder("Aim")
         --local anti_aim = ui:AddFolder("Anti Aim")
-        --local gun = ui:AddFolder("Gun")
+        local gun = ui:AddFolder("Gun")
         local esp = ui:AddFolder("ESP")
-        --local visuals = ui:AddFolder("Other Visuals")
-        --local misc = ui:AddFolder("Misc")
 
         aim:AddToggle({
             text = "Team Check",
@@ -1078,7 +1082,6 @@ end
         --    callback = function(v) o.antiaim_noleg = v end
         --})
 
-      --[[  gun:AddLabel({ text = "Gun mods are not reversible" })
         gun:AddSlider({
             text = "Bullet Multiplier",
             value = o.bullet_multiplier,
@@ -1106,25 +1109,6 @@ end
             state = o.do_zeropullout,
             callback = function(v) o.do_zeropullout = v end
         })
-        gun:AddList({
-            text = "Bullet Caliber",
-            values = { "Default", "Assault", "Sniper", "Pistol", "Shotgun", "SMG", "LMG" },
-            value = o.bullet_caliber,
-            callback = function(v) o.bullet_caliber = v end
-        })
-        gun:AddList({
-            text = "Fire Mode",
-            values = { "Default", "Auto", "Burst", "SemiAuto", "BoltAction", "Pump" },
-            value = o.fire_mode,
-            callback = function(v) o.fire_mode = v end
-        })
-        gun:AddSlider({
-            text = "Fire Rate",
-            value = o.fire_rate,
-            min = 0,
-            max = 2000,
-            callback = function(v) o.fire_rate = v end
-        }) ]]--
 
         esp:AddToggle({
             text = "Outlines",
@@ -1157,84 +1141,6 @@ end
             callback = function(v) o.esp_highlightcolor = v end
         })
 
-       --[[ visuals:AddToggle({
-            text = "Player Glow",
-            state = o.do_glow,
-            callback = function(v) o.do_glow = v end
-        })
-        visuals:AddSlider({
-            text = "Glow Intensity",
-            min = 0,
-            max = 100,
-            value = o.glow_intensity,
-            callback = function(v) o.glow_intensity = v update_chams() end
-        })
-        visuals:AddColor({
-            text = "Enemy Glow Color",
-            color = { o.glow_enemycolor.r, o.glow_enemycolor.g, o.glow_enemycolor.b },
-            callback = function(v) o.glow_enemycolor = v update_chams() end
-        })
-        visuals:AddColor({
-            text = "Team Glow Color",
-            color = { o.glow_teamcolor.r, o.glow_teamcolor.g, o.glow_teamcolor.b },
-            callback = function(v) o.glow_teamcolor = v update_chams() end
-        }) update_chams()
-        visuals:AddColor({
-            text = "FOV Circle Color",
-            color = o.fovcolor,
-            callback = function(v) o.fovcolor = v end
-        })
-        --visuals:AddSlider({
-        --    text = "Camera FOV Modifier",
-        --    value = o.fov,
-        --    min = 0,
-        --    max = MAX_FOV * 2,
-        --    callback = function(v) o.fov = v end
-        --})
-        visuals:AddToggle({
-            text = "Rainbow Environment",
-            state = o.do_rainbowsky,
-            callback = function(v) o.do_rainbowsky = v end
-        })
-        visuals:AddToggle({
-            text = "Rainbow Viewmodel",
-            state = o.do_rainbowgun,
-            callback = function(v) o.do_rainbowgun = v end
-        })
-        --visuals:AddSlider({
-        --    text = "Viewmodel Roll",
-        --    value = o.viewmodel_offset,
-        --    min = 0,
-        --    max = 360,
-        --    callback = function(v) o.viewmodel_offset = v end
-        --})
-        --visuals:AddSlider({
-        --    text = "Viewmodel FOV",
-        --    value = o.viewmodel_fov,
-        --    min = 0,
-        --    max = 200,
-        --    callback = function(v) o.viewmodel_fov = v end
-        --}) ]]--
-       -- visuals:AddToggle({
-         --   text = "Hide Arms",
-           -- state = o.do_noarms,
-            --callback = function(v) o.do_noarms = v end
-        -- })
-        --visuals:AddToggle({
-        --    text = "Third Person",
-        --    state = o.do_thirdperson,
-        --    callback = function(v) o.do_thirdperson = v end
-        --})
-        --[[visuals:AddToggle({
-            text = "Bullet Impacts",
-            state = o.esp_bulletimpacts,
-            callback = function(v) o.esp_bulletimpacts = v end
-        })
-        visuals:AddColor({
-            text = "Impact Colors",
-            color = {  o.esp_impactcolors.r, o.esp_impactcolors.g, o.esp_impactcolors.b },
-            callback = function(v) o.esp_impactcolors = v end
-        })--]]
 
         do--[[
             local weapons = {}
@@ -1248,38 +1154,7 @@ end
                 callback = function(v) o.spambuy_weapon = v end
             })--]]
         end
-      --[[  misc:AddToggle({
-            text = "Auto Farm Kills",
-            state = o.do_autofarmkills,
-            callback = function(v) o.do_autofarmkills = v end
-        })
-        misc:AddSlider({
-            text = "Speed Modifier",
-            value = o.speed_modifier,
-            min = 1,
-            max = 60,
-            callback = function(v) o.speed_modifier = v end
-        })
-        misc:AddToggle({
-            text = "Chat Spam",
-            state = o.do_chatspam,
-            callback = function(v) o.do_chatspam = v end
-        })
-        misc:AddBox({
-            text = "Chat Spam Message",
-            value = o.chatspam_msg,
-            callback = function(v) o.chatspam_msg = v end
-        })
-        misc:AddBox({
-            text = "Name Spoofer",
-            value = o.spoofed_name,
-            callback = function(v) o.spoofed_name = v end
-        })
-        misc:AddToggle({
-            text = "Rainbow Chat",
-            state = o.do_rainbowchat,
-            callback = function(v) o.do_rainbowchat = v end
-        }) ]]--
+       
         --#region skin changer
         do
             --local weapons = replicatedstorage:WaitForChild("Assets"):WaitForChild("Weapons")
@@ -1341,7 +1216,7 @@ end
             end
         end
     end
-    localplayer.CharacterAdded:Connect(char)
+    localplayer.CharacterAdded:Connect(localCharAdded)
     if localplayer.Character then
         localCharAdded(localplayer.Character)
     end
@@ -1552,7 +1427,7 @@ end
     library:Init()
     getgenv(0).__AHLOADED = true
     ok("Cheat ready :D")
-    WaitForService("StarterGui"):SetCore("SendNotification", { Title = "Welcome to BarBoss steak", Text = "Made by Kitaku#3980", Image = "rbxassetid://7091101767" })
+    WaitForService("StarterGui"):SetCore("SendNotification", { Title = "Welcome to Barboss steak", Text = "Made by Kitaku", Image = "rbxassetid://7091101767" })
     --
 --[[end, debug.traceback)
 if not success then
