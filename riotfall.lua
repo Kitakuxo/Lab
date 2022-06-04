@@ -10,6 +10,38 @@ local OldSpawn
 local nilfunc = function()
     task.wait(10e3 ^ 2)
 end
+local function acbp()
+    for _, func in pairs(getgc(true)) do
+        if type(func) == "function"
+        and islclosure(func)
+        and not is_synapse_function(func)
+        then
+            local finfo = debug.getinfo(func)
+            if string.match(finfo.short_src, "AntiCheat$") then
+                for _, const in pairs(debug.getconstants(func)) do
+                    if const == "error in error handling" then
+                        hookfunction(func, function() end)
+                        break
+                    end
+                end
+            end
+        end
+    end
+end
+do
+    local old_xpcall
+    local function xpcall_hook(...)
+        if not checkcaller() and debug.getinfo(4).short_src:match("AntiCheat") then
+            return nil
+        end
+        return old_xpcall(...)
+    end
+    old_xpcall = hookfunction(getrenv().xpcall, function(...)
+        return xpcall_hook(...)
+    end)
+end
+--while task.wait() do end
+acbp()
 ----------------------------------------------------------------
 --local success, msg = xpcall(function()
     if __AHLOADED then return end
@@ -974,11 +1006,6 @@ end
         local esp = ui:AddFolder("ESP")
 
         aim:AddToggle({
-            text = "Team Check",
-            state = o.do_teamcheck,
-            callback = function(v) o.do_teamcheck = v end
-        })
-        aim:AddToggle({
             text = "Silent Aim",
             state = o.do_silentaim,
             callback = function(v) o.do_silentaim = v end
@@ -1010,26 +1037,7 @@ end
         --    state = o.do_infwallbang,
         --    callback = function(v) o.do_infwallbang = v end
         --})
-        aim:AddToggle({
-            text = "Infinite Melee Range",
-            state = o.do_longmelee,
-            callback = function(v) o.do_longmelee = v end
-        })
-        aim:AddToggle({
-            text = "Auto Knife",
-            state = o.do_autoknife,
-            callback = function(v) o.do_autoknife = v end
-        })
-        aim:AddToggle({
-            text = "Auto Shoot",
-            state = o.do_autoshoot,
-            callback = function(v) o.do_autoshoot = v end
-        })
-        aim:AddToggle({
-            text = "Kill All",
-            state = o.do_killall,
-            callback = function(v) o.do_killall = v end
-        })
+
         --aim:AddToggle({
         --    text = "Auto Reload",
         --    state = o.do_autoreload,
@@ -1090,11 +1098,6 @@ end
             min = 1,
             max = 100,
             callback = function(v) o.bullet_multiplier = v end
-        })
-        gun:AddToggle({
-            text = "Infinite Ammo",
-            state = o.do_infiniteammo,
-            callback = function(v) o.do_infiniteammo = v end
         })
 
         esp:AddToggle({
