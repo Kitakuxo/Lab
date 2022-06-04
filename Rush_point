@@ -172,6 +172,7 @@ acbp()
     local doGhosting = false
     local rainbow_color = Color3.new(1, 1, 1)
     local tracers = {}
+    local esp_names = {}
     local tryingToKill, killfeed = {}, {}
 
     local DbgTxt = Drawing.new("Text")
@@ -185,15 +186,15 @@ acbp()
     if not syn then (messagebox or print)("Your exploit is not supported", "Exploit not supported", 0) end
 
     local o = {} -- options
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/Lab/main/logging.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/Lab/main/logging.luaa"))()
     clear()
     title("Cheat - Loading")
     printwelcome()
     info("Loading Cheat...")
     info("Done !")
     info("--New Update Release Now--")
-    info("-Team Check Outline-")
-    info("+ add No Recoil")
+    info("+ Fixed speed modifier (now working with all weapons)")
+    info("+ Added name esp")
 
     local function WaitForService(serv)
         repeat task.wait() until game:GetService(serv)
@@ -224,9 +225,9 @@ acbp()
     local isInLobby = WaitForProp(players, "MaxPlayers") == 1 or game.PlaceId == 5993942214
     if isInLobby then
         title("Cheat - In the lobby")
-        info("--This is Lobby--")
+        info("You are in the lobby :D")
         --// lobby script
-        warn("Cheat is Ready !")
+        warn("TODO: menu support")
         coroutine.wrap(function()
             local menu = localplayer:WaitForChild("PlayerGui"):WaitForChild("Menu")
             while task.wait(.5) do
@@ -301,7 +302,10 @@ acbp()
             mapFolder:FindFirstChild("MapCallouts"),
             mapFolder.Map:FindFirstChild("Ramps"),
             mapFolder.Map:FindFirstChild("SecondaryObjects"),
-            mapFolder.Map:FindFirstChild("Walls"):FindFirstChild("MapWalls")
+            mapFolder.Map:FindFirstChild("Forces"),
+            mapFolder.Map:FindFirstChild("Sites"),
+            mapFolder.Map:FindFirstChild("Walls"),
+            mapFolder.Map:FindFirstChild("Parts")
     end
 
     local ray_params = RaycastParams.new()
@@ -311,19 +315,20 @@ acbp()
         local whitelist = RaycastParams.new()
         whitelist.FilterType = Enum.RaycastFilterType.Whitelist
         whitelist.FilterDescendantsInstances = { mapFolder.Map:FindFirstChild("BAC"),
-            workspace:FindFirstChildWhichIsA("Terrain") }
+            --[[workspace:FindFirstChildWhichIsA("Terrain")]] }
         local direction = CFrame.new(origin, target)
         local ray = workspace:Raycast(direction.Position, direction.LookVector * 5e3, whitelist)
         return ray
             and ray.Instance
             and (
                 ray.Instance:IsDescendantOf(mapFolder)
-                or ray.Instance:IsA("Terrain")
+                --or ray.Instance:IsA("Terrain")
             )
     end
-    local function _vis_check(target, origin)
+    local function _vis_check(target, origin, ignore)
         origin = origin or workspace.CurrentCamera.CFrame.Position
-        ray_params.FilterDescendantsInstances = { get_ray_ignore() }
+        ray_params.FilterDescendantsInstances = { get_ray_ignore(),
+            type(ignore) == "table" and table.unpack(ignore) }
         local direction = CFrame.new(origin, target)
         local ray = workspace:Raycast(direction.Position, direction.LookVector * 5e3, ray_params)
         return ray and ray.Instance and ray.Position and (target - ray.Position).Magnitude < 6, ray.Position, ray.Instance
@@ -358,30 +363,106 @@ acbp()
         end
         return closest_corner and ((closest_corner - pos) * Vector3.new(1, 0, 1)).Magnitude or math.huge
     end
+    local PEN_MODIFIERS = { ["Low"] = 8, ["Medium"] = 2, ["High"] = 1, ["Players"] = 3 }
+    local function get_penetration(part)
+        local classifyMaterial = (LoadedModules or {}).ClassifyMaterial
+        if not classifyMaterial then
+            return
+        end
+        local material = classifyMaterial(part)
+        local penetrationInfo = (LoadedModules or {}).PenetrationInfo
+        if not penetrationInfo then
+            return
+        end
+        local pen_material = material and penetrationInfo[material]
+        return pen_material and PEN_MODIFIERS[pen_material], pen_material
+    end
     local function vis_check(target, origin)
-        local success, isVis, hitPos, hitPart = pcall(_vis_check, target, origin)
+        local bac = mapFolder.Map:FindFirstChild("BAC")
+        local success, isVis, hitPos, hitPart = pcall(_vis_check, target, origin, { bac })
         if not success then
             return false
         end
+        local pensLeft = { ["Low"] = 8, ["Medium"] = 2, ["High"] = 1, ["Players"] = 3 }
         local i = 0
         if o.do_autowall then
             repeat
                 i += 1
+                local penAmt, penMaterial = get_penetration(hitPart)
+                if penAmt and penMaterial then
+                    pensLeft[penMaterial] -= penAmt
+                end
+                for _, penTypeLeft in pairs(pensLeft) do
+                    if tonumber(penTypeLeft or 99) <= 0 then
+                        break
+                    end
+                end
                 if not isVis and typeof(hitPos) == "Vector3" then
-                    isVis, hitPos, hitPart = _vis_check(target, hitPos)
+                    success, isVis, hitPos, hitPart = pcall(_vis_check, target, hitPos, { bac })
+                    if hitPart:IsDescendantOf(bac) then
+                        isVis = false
+                        break
+                    end
                 else
                     break
                 end
-            until isVis or i > 2
+            until isVis or i > 1 or not success
         end
         local isCornerHit = hitPart and hitPos and corner_distance(hitPart, hitPos) < 16
-        local isBlocked = not isCornerHit and will_be_blocked(target, origin)
+        local isBlocked = not isCornerHit and hitPart and bac and hitPart:IsDescendantOf(bac)
         local canShoot = (isVis and (not isBlocked))
         return canShoot, isCornerHit, i
     end
-    local function corner_cast(corner_dist_z, corner_dist_y, target, ignore)
+    local function create_debug_part(pos, color)
+        local part = Instance.new("Part")
+        game.Debris:AddItem(part, 3)
+        part.Anchored = true
+        part.Transparency = 1
+        part.Size = Vector3.zero
+        part.Position = pos
+        part.Parent = workspace
+        local bha = Instance.new("SphereHandleAdornment")
+        bha.ZIndex = 12
+        bha.Visible = true
+        bha.Radius = 0.25
+        bha.Color3 = color or Color3.new(0, 1, 0)
+        bha.Transparency = 0.35
+        bha.AlwaysOnTop = true
+        bha.Adornee = part
+        bha.Parent = part
+    end
+    --local function vis_check(target, origin)
+    --    local map = mapFolder:FindFirstChild("Map")
+    --    if not map then
+    --        return
+    --    end
+    --    local whitelist = RaycastParams.new()
+    --    whitelist.FilterType = Enum.RaycastFilterType.Whitelist
+    --    local bac = map:FindFirstChild("BAC")
+    --    whitelist.FilterDescendantsInstances = { map:FindFirstChild("Walls"),
+    --        map:FindFirstChild("Players"), bac }
+    --    local ray, isVis
+    --    local i = 0
+    --    repeat
+    --        i += 1
+    --        local direction = CFrame.new(origin, target)
+    --        ray = workspace:Raycast(direction.Position, direction.LookVector * 15e3, whitelist)
+    --        if ray and ray.Position then
+    --            if bac and ray.Instance and ray.Instance:IsDescendantOf(bac) then
+    --                isVis = false
+    --                create_debug_part(ray.Position, Color3.new(1, 0, 0))
+    --                break
+    --            end
+    --            create_debug_part(ray.Position, Color3.new(1, 0, 1))
+    --            isVis = (target - ray.Position).Magnitude <= 8
+    --            origin = ray.Position
+    --        end
+    --    until not ray or i > 1
+    --    return isVis, false, i
+    --end
+    local function corner_cast(corner_dist_z, corner_dist_y, target, ignore, origin)
         ray_params.FilterDescendantsInstances = { get_ray_ignore(), unpack(ignore) }
-        local origin = workspace.CurrentCamera.CFrame
+        origin = origin or workspace.CurrentCamera.CFrame
         local adjusted = origin + Vector3.new(0, corner_dist_y, corner_dist_z)
         local direction = CFrame.lookAt(adjusted.Position, target)
         local ray = workspace:Raycast(adjusted.Position, direction.LookVector * 1e3)
@@ -389,23 +470,24 @@ acbp()
     end
     local corner_offset_amt = 8
     local function get_corner_offset(target, ignore)
-        local base, basec = corner_cast(0, 0, target.Position, ignore)
+        local origin = target and target.CFrame or workspace.CurrentCamera.CFrame
+        local base, basec = corner_cast(0, 0, target.Position, ignore, origin)
         if base and base:IsDescendantOf(target.Parent) then
             return basec, base
         end
-        local c1, ac1 = corner_cast(-corner_offset_amt, 0, target.Position, ignore)
+        local c1, ac1 = corner_cast(-corner_offset_amt, 0, target.Position, ignore, origin)
         if c1 and c1:IsDescendantOf(target.Parent) then
             return ac1, c1
         end
-        local c2, ac2 = corner_cast(corner_offset_amt, 0, target.Position, ignore)
+        local c2, ac2 = corner_cast(corner_offset_amt, 0, target.Position, ignore, origin)
         if c2 and c2:IsDescendantOf(target.Parent) then
             return ac2, c2
         end
-        local c3, ac3 = corner_cast(0, corner_offset_amt, target.Position, ignore)
+        local c3, ac3 = corner_cast(0, corner_offset_amt, target.Position, ignore, origin)
         if c3 and c3:IsDescendantOf(target.Parent) then
             return ac3, c3
         end
-        local c4, ac4 = corner_cast(0, -corner_offset_amt, target.Position, ignore)
+        local c4, ac4 = corner_cast(0, -corner_offset_amt, target.Position, ignore, origin)
         if c4 and c4:IsDescendantOf(target.Parent) then
             return ac4, c4
         end
@@ -427,27 +509,35 @@ acbp()
     --        "RightFoot", "RightLowerLeg", "RightUpperLeg"
     --    }
     --}
+    local head_bones = {
+        "Head",
+        "UpperTorso",
+        "LowerTorso",
+        "LeftLowerArm",
+        "RightLowerArm",
+        "LeftLowerLeg",
+        "RightLowerLeg"
+    }
+    local body_bones = {
+        "UpperTorso",
+        "LowerTorso",
+        "LeftLowerArm",
+        "RightLowerArm",
+        "LeftLowerLeg",
+        "RightLowerLeg",
+        "Head"
+    }
     local function GetBone(char)
-        local bones = {
-            (not o.prefer_body and "Head"),
-            "UpperTorso",
-            "LowerTorso",
-            (o.prefer_body and "Head"),
-            "LeftLowerArm",
-            "RightLowerArm",
-            "LeftLowerLeg",
-            "RightLowerLeg",
-        }
-        for _, bone in ipairs(bones) do
+        for _, bone in ipairs(o.prefer_body and body_bones or head_bones) do
             local foundBone = char:FindFirstChild(bone)
             if foundBone then
                 local success, is_vis = pcall(vis_check, foundBone.Position)
                 if success and is_vis then
-                    return foundBone
+                    return foundBone, true
                 end
             end
         end
-        return char:FindFirstChild(o.prefer_body and "UpperTorso" or "Head")
+        return char:FindFirstChild(o.prefer_body and "UpperTorso" or "Head"), false
     end
 
     local function GetPlayerCharacter(plr)
@@ -461,7 +551,7 @@ acbp()
         local registeredData = killfeed[plr]
         local internalData = tryingToKill[plr]
         if registeredData and internalData then
-            debug("Player was killed! Data:", httpservice:JSONEncode(internalData), httpservice:JSONEncode(registeredData))
+            --debug("Player was killed! Data:", httpservice:JSONEncode(internalData), httpservice:JSONEncode(registeredData))
         end
     end
 
@@ -632,10 +722,13 @@ acbp()
         task.wait()
         ok("Shims loaded")
     end
-    local LoadedModules = engine.LoadedModules
+    LoadedModules = engine.LoadedModules
     local gunEngine = LoadedModules.WeaponManagerClient
     local sharedMemory = LoadedModules.SharedMemory
     local weaponInfo = LoadedModules.WeaponInfo
+    local gun_engine_shoot = gunEngine.Shoot
+    local gun_engine_firebullet = gunEngine.FireBullet
+
     local function find_first_viable_char()
         for _, plr in pairs(players:GetPlayers()) do
             local char = GetPlayerCharacter(plr)
@@ -667,8 +760,6 @@ acbp()
         end
     end
     local is_reloading = false
-    local gun_engine_shoot = gunEngine.Shoot
-    local gun_engine_firebullet = gunEngine.FireBullet
     local function force_shoot(plr, offsetZ)
         if is_reloading then return end
         if o.autoshoot_mode == "Forced" then
@@ -728,6 +819,8 @@ acbp()
 
     o.do_outlines = false
     o.esp_3dbox = false
+    o.esp_skeleton = false
+    o.esp_names = false
     o.esp_bomb = false
     o.esp_bombcolor = Color3.new(1, 0, 1)
     o.esp_highlighttarget = false
@@ -737,7 +830,7 @@ acbp()
     o.esp_droppedweapons = false
     o.esp_droppedweaponscolor = Color3.new(0, 0.4, 1)
     o.esp_bulletimpacts = false
-    o.esp_impactcolors = Color3.new(1, 1, 1)
+    o.esp_impactcolors = Color3.new(0, 0.25, 0.75)
     o.do_thirdperson = false
     o.do_noarms = false
     o.do_rainbowgun = false
@@ -918,9 +1011,7 @@ acbp()
                             local can_shoot = false
                             local silentOffsetZ = 0
                             local success, isVis, isCornerHit, wallAmount = pcall(vis_check, target, origincf.Position)
-                            DbgTxt.Text = "VisCheck::Success?" .. tostring(success)
-                                .. ",CornerHit?" .. tostring(isCornerHit)
-                                .. ",WallPen#" .. tostring(wallAmount)
+                            DbgTxt.Text = tostring(success) .. " \"" .. tostring(isVis) .. "\""
                             if success and isVis then
                                 can_shoot = true
                                 local attempt = {
@@ -931,7 +1022,7 @@ acbp()
                                     isCornerHit = isCornerHit
                                 }
                                 tryingToKill[plr] = attempt
-                                info("TRYING TO KILL:", httpservice:JSONEncode(attempt))
+                                --info("TRYING TO KILL:", httpservice:JSONEncode(attempt))
                             --elseif vis_check(target, (origincf + (origincf.LookVector * 10)).Position) then
                             --    can_shoot = true
                             --    silentOffsetZ = 10
@@ -1039,81 +1130,21 @@ acbp()
             corners.rawSize             = size
             return corners
         end
-        local function drawLineFrom3d(v3_1, v3_2, v3_3, v3_4, line, color, visible)
+        local function drawLineFrom3d(v3_1, v3_2, line, color, visible)
             local camera = workspace.CurrentCamera
             if camera then
                 if (camera.CFrame.Position - v3_1).Magnitude > 8 then
                     local a = camera:WorldToViewportPoint(v3_1)
                     local b = camera:WorldToViewportPoint(v3_2)
-                    local c = camera:WorldToViewportPoint(v3_3)
-                    local d = camera:WorldToViewportPoint(v3_4)
-                    line.PointA = Vector2.new(a.X, a.Y)
-                    line.PointB = Vector2.new(b.X, b.Y)
-                    line.PointC = Vector2.new(c.X, c.Y)
-                    line.PointD = Vector2.new(d.X, d.Y)
+                    line.From = Vector2.new(a.X, a.Y)
+                    line.To = Vector2.new(b.X, b.Y)
                     line.Color = color
                     line.Visible = visible == true
                 end
             end
         end
-        local function add_esp_thread(char)
-            local polygons = {}
-            for i = 1, 6 do
-                local square = Drawing.new("Quad")
-                square.Thickness = 1
-                square.Filled = false
-                polygons[i] = square
-            end
-            local conn = runservice.RenderStepped:Connect(function()
-                local camera = workspace.CurrentCamera
-                if typeof(char) == "Instance" and char:IsA("Model") then
-                    if camera then
-                        local color = GetESPColor(char)
-                        local bounds = getModelBounds3d(char)
-                        drawLineFrom3d(bounds.topFrontLeft, bounds.topFrontRight, bounds.bottomFrontRight, bounds.bottomFrontLeft, polygons[1], color)
-                        drawLineFrom3d(bounds.topBackLeft, bounds.topBackRight, bounds.bottomBackRight, bounds.bottomBackLeft, polygons[2], color)
-                        drawLineFrom3d(bounds.topBackRight, bounds.topFrontRight, bounds.bottomFrontRight, bounds.bottomBackRight, polygons[3], color)
-                        drawLineFrom3d(bounds.topBackLeft, bounds.topFrontLeft, bounds.bottomFrontLeft, bounds.bottomBackLeft, polygons[4], color)
-                        drawLineFrom3d(bounds.topFrontRight, bounds.topFrontLeft, bounds.topBackLeft, bounds.topBackRight, polygons[5], color)
-                        drawLineFrom3d(bounds.bottomBackLeft, bounds.bottomBackRight, bounds.bottomFrontRight, bounds.bottomFrontLeft, polygons[6], color)
-                    end
-                end
-            end)
-            char.AncestryChanged:Connect(function()
-                conn:Disconnect()
-                for _, line in pairs(polygons) do
-                    task.spawn(pcall, function()
-                        line.Visible = false
-                        line:Remove()
-                    end)
-                end
-            end)
-        end
-        --local entity_outlines = {}
-        --local function add_entity_outline(char)
-        --    local team = char:FindFirstChild("Team")
-        --    local localteam = localplayer:FindFirstChild("SelectedTeam")
-        --    if team and localteam and char ~= localplayer.Character then
-        --        local outline = char:FindFirstChildWhichIsA("Highlight") or Instance.new("Highlight")
-        --        outline.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        --        outline.OutlineColor = GetESPColor(char)
-        --        outline.OutlineTransparency = o.do_outlines and 0 or 1
-        --        outline.Adornee = char
-        --        outline.FillTransparency = 1
-        --        outline.Parent = coregui_parent
-        --        entity_outlines[char] = outline
-        --    end
-        --end
-        --for _, c in pairs(characters:GetChildren()) do
-        --    add_entity_outline(c)
-        --end
-        --characters.ChildAdded:Connect(add_entity_outline)
-        --characters.ChildRemoved:Connect(function(char)
-        --    if typeof(entity_outlines[char]) == "Instance" then
-        --        pcall(game.Destroy, entity_outlines[char])
-        --    end
-        --    entity_outlines[char] = nil
-        --end)
+        -----------
+
         -- CHAMS!!!!! (glow)
         players.PlayerAdded:Connect(function(plr)
             local tracer = Drawing.new("Line")
@@ -1137,30 +1168,75 @@ acbp()
                 end
             end
         end
+        local bone_connections = {
+            -- Left leg
+            ["LeftFoot"] = "LeftLowerLeg",
+            ["LeftLowerLeg"] = "LeftUpperLeg",
+            ["LeftUpperLeg"] = "LowerTorso",
+            -- Right leg
+            ["RightFoot"] = "RightLowerLeg",
+            ["RightLowerLeg"] = "RightUpperLeg",
+            ["RightUpperLeg"] = "LowerTorso",
+            -- Left arm
+            ["LeftHand"] = "LeftLowerArm",
+            ["LeftLowerArm"] = "LeftUpperArm",
+            ["LeftUpperArm"] = "UpperTorso",
+            -- Right arm
+            ["RighttHand"] = "RightLowerArm",
+            ["RightLowerArm"] = "RightUpperArm",
+            ["RightUpperArm"] = "UpperTorso",
+            -- Spine
+            ["LowerTorso"] = "UpperTorso",
+            ["UpperTorso"] = "Head"
+        }
         function update_chams()
             for _, char in pairs(characters:GetChildren()) do
                 update_cham(char)
             end
         end
-        characters.ChildAdded:Connect(function(char)
-            if char:FindFirstChild("Team") and char ~= localplayer.Character then
-                for _, mesh in pairs(char:GetDescendants()) do
-                    if mesh:IsA("MeshPart")
-                    and not mesh.Name:match("Arm")
-                    and not mesh.Name:match("Hand")
-                    then
-                        for _, face in pairs(Enum.NormalId:GetEnumItems()) do
-                            local texture = Instance.new("Texture")
-                            texture.Texture = "rbxassetid://6888586040"
-                            texture.Transparency = 1
-                            texture.Face = face
-                            texture.Parent = mesh
-                        end
+        local function char_descendant_added(part)
+            if part:IsA("MeshPart")
+            then
+                if part.Name:match("Arm") or part.Name:match("Hand") then
+                    if not part.Parent.Name:match("^[Left]*[Right]*$") then
+                        return
                     end
                 end
+                for _, face in pairs(Enum.NormalId:GetEnumItems()) do
+                    local texture = Instance.new("Texture")
+                    texture.Texture = "rbxassetid://6888586040"
+                    texture.Transparency = 1
+                    texture.Face = face
+                    texture.Parent = part
+                end
+            end
+        end
+        local function character_added(char)
+            if char:FindFirstChild("Team") and char ~= localplayer.Character then
+                for _, mesh in pairs(char:GetDescendants()) do
+                    char_descendant_added(mesh)
+                end
+                char.DescendantAdded:Connect(char_descendant_added)
+                local name_text = Drawing.new("Text")
+                name_text.Color = Color3.new(1, 1, 1)
+                name_text.Visible = false
+                name_text.Size = 16
+                name_text.Font = Drawing.Fonts.Monospace
+                esp_names[char] = name_text
             end
             update_cham(char)
+        end
+        characters.ChildAdded:Connect(character_added)
+        characters.ChildRemoved:Connect(function(char)
+            local name = esp_names[char]
+            if name then
+                pcall(name.Remove, name)
+            end
+            rawset(esp_names, char, nil)
         end)
+        for _, char in pairs(characters:GetChildren()) do
+            character_added(char)
+        end
         ---
         local dropped_weapons = workspace:WaitForChild("DroppedWeapons")
         local weapon_outlines = {}
@@ -1396,7 +1472,27 @@ acbp()
             state = o.visibleonly,
             callback = function(v) o.visibleonly = v end
         })
-
+ 
+        aim:AddToggle({
+            text = "Infinite Wallbang",
+            state = o.do_infwallbang,
+            callback = function(v) o.do_infwallbang = v end
+        })
+ 
+        gun:AddSlider({
+            text = "Bullet Multiplier",
+            value = o.bullet_multiplier,
+            min = 1,
+            max = 100,
+            callback = function(v) o.bullet_multiplier = v end
+        })
+        gun:AddSlider({
+            text = "Spread Reducer",
+            value = o.spread_reducer,
+            min = 0,
+            max = 100,
+            callback = function(v) o.spread_reducer = v end
+        })
         gun:AddToggle({
             text = "No Recoil",
             state = o.do_norecoil,
@@ -1413,6 +1509,16 @@ acbp()
         --    state = o.esp_3dbox,
         --    callback = function(v) o.esp_3dbox = v end
         --})
+        --esp:AddToggle({
+        --    text = "Player Skeletons",
+        --    state = o.esp_skeleton,
+        --    callback = function(v) o.esp_skeleton = v end
+        --})
+        esp:AddToggle({
+            text = "Show Names",
+            state = o.esp_names,
+            callback = function(v) o.esp_names = v end
+        })
         esp:AddColor({
             text = "Enemy Outline Color",
             color = { o.esp_enemycolor.r, o.esp_enemycolor.g, o.esp_enemycolor.b },
@@ -1537,9 +1643,9 @@ acbp()
                 if o.do_norecoil then
                     currentGunData.Recoil = { { X = 0, Y = 0 } }
                 end
-                if o.speed_modifier > 1 then
-                    currentGunData.MovementSpeedMultiplier = o.speed_modifier / 10
-                end
+                --if o.speed_modifier > 1 then
+                --    currentGunData.MovementSpeedMultiplier = o.speed_modifier / 10
+                --end
                 if o.fire_rate > 0 then
                     currentGunData.FireRate = (2000 - o.fire_rate) / 10
                 end
@@ -1658,6 +1764,27 @@ acbp()
             end
         end
     end)
+    runservice:BindToRenderStep("nameesptext", Enum.RenderPriority.Camera.Value + 5, function()
+        for char, txt in pairs(esp_names) do
+            local head = char:FindFirstChild("Head", true)
+            if txt then
+                if head and o.esp_names then
+                    local pos = head.Position
+                    txt.Color = Color3.new(1, 1, 1)
+                    local w2s_point, isOnScreen = workspace.CurrentCamera:WorldToViewportPoint(pos)
+                    if isOnScreen then
+                        txt.Position = Vector2.new(w2s_point.X, w2s_point.Y)
+                        txt.Text = char.Name
+                        txt.Center = true
+                        txt.Color = GetESPColor(char)
+                        txt.Visible = true
+                        continue
+                    end
+                end
+                txt.Visible = false
+            end
+        end
+    end)
     runservice.RenderStepped:Connect(function()
         if o.do_lagserver then
             local _, plr = find_first_viable_char()
@@ -1670,12 +1797,23 @@ acbp()
             if IsA(self, "Highlight")
             and o.do_outlines
             and IsDescendantOf(self, characters)
-            and (idx == "OutlineColor"
-                or idx == "DepthMode"
-                or idx == "Enabled"
-                or idx == "OutlineTransparency")
             then
-                return nil
+                if idx == "OutlineColor" then
+                    return GetESPColor(self.Parent)
+                elseif idx == "DepthMode" then
+                    return Enum.HighlightDepthMode.AlwaysOnTop
+                elseif idx == "Enabled" then
+                    return true
+                elseif idx == "OutlineTransparency" then
+                    return 0
+                end
+            elseif IsA(self, "Humanoid")
+            and o.speed_modifier > 1
+            and IsDescendantOf(self, localplayer.Character)
+            and idx == "WalkSpeed"
+            and type(val) == "number"
+            then
+                val *= (o.speed_modifier / 10)
             end
         end
         return OldNewIndex(self, idx, val)
@@ -1802,7 +1940,7 @@ acbp()
     library:Init()
     getgenv(0).__AHLOADED = true
     ok("Cheat ready :D")
-    WaitForService("StarterGui"):SetCore("SendNotification", { Title = "Welcome to BarBoss steak", Text = "Made by Kitaku", Image = "rbxassetid://7091101767" })
+    WaitForService("StarterGui"):SetCore("SendNotification", { Title = "Welcome to Barboss steak", Text = "Made by Kitaku", Image = "rbxassetid://7091101767" })
     --
 --[[end, debug.traceback)
 if not success then
