@@ -186,7 +186,7 @@ acbp()
     if not syn then (messagebox or print)("Your exploit is not supported", "Exploit not supported", 0) end
 
     local o = {} -- options
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/Lab/main/logging.luaa"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kitakuxo/Lab/main/logging.lua"))()
     clear()
     title("Cheat - Loading")
     printwelcome()
